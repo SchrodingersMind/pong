@@ -11,15 +11,15 @@ from tkinter import *
 # - add scale - DONE
 # - add music - AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 # - add settings
-# - - theme
+# - - theme			- DONE
 # - - sound on/off	- DEL
 # - - screen size	- DONE
 # - startup menu
 # - - play standart		- DONE
 # - - player vs computer - DONE
-# - - help 
+# - - help 				- +-
 # - set ball as image
-# - add bonuses and (de)buffs
+# - add bonuses and (de)buffs - DONE
 
 class ExCanvas(Canvas):
 	""" Make life better and code more understable """
@@ -100,7 +100,7 @@ class Game:
 			# 3 - <del>CRAZIEST</del> FUNNIEST CHOICE EVER. BUFFS APEARED 1 TIME A 0.3 S
 			# 4 - epileptic
 			
-		self.CRAZY = 2
+		self.CRAZY = 3
 		
 	
 		###			Drawable and Window params
@@ -201,10 +201,10 @@ class Game:
 			
 	# Used for testing, shoud be deleted	
 	def print_help(self):
-		print("TODO!! Print it on screen")
+		print("TODO!! Print it on main window")
 		print("Controls: left player - W/S, right - key Up/Down")
 		print("When played against bot you are right")
-		print()	
+		print("After start, press Esc to see more options")	
 		
 	def _stop_cont_game(self):
 		if self.game_stopped:
@@ -221,23 +221,23 @@ class Game:
 		 
 	 
 		# left line
-		self.c.create_line(self.ss.PAD_W, 0, self.ss.PAD_W, self.ss.HEIGHT, fill=self.theme.lines, tag="line")
+		self.c.create_line(self.ss.PAD_W, 0, self.ss.PAD_W, self.ss.HEIGHT, fill=self.theme.line, tag="line")
 		# right line
 		self.c.create_line(self.ss.WIDTH-self.ss.PAD_W, 0, self.ss.WIDTH-self.ss.PAD_W, 
-							self.ss.HEIGHT, fill=self.theme.lines, tag="line")
+							self.ss.HEIGHT, fill=self.theme.line, tag="line")
 		# central line
 		self.c.create_line(self.ss.WIDTH//2, 0, self.ss.WIDTH//2, 
-							self.ss.HEIGHT, fill=self.theme.lines, tag="line")
+							self.ss.HEIGHT, fill=self.theme.line, tag="line")
 		
 		
 		self.buffs = Buffs(self.ss, self)
 		
 		# Work with Pads
-		left_pad_id = self.c.create_line(self.ss.PAD_W/2, 0, self.ss.PAD_W/2, 
-										self.ss.PAD_H, width=self.ss.PAD_W, fill=self.theme.l_pad, tag="l_pad")
+		left_pad_id = self.c.create_rectangle(0, 0, self.ss.PAD_W, 
+										self.ss.PAD_H, width=1, fill=self.theme.l_pad, tag="l_pad")
 		 
-		right_pad_id = self.c.create_line(self.ss.WIDTH-self.ss.PAD_W/2, 0, self.ss.WIDTH-self.ss.PAD_W/2, 
-									  self.ss.PAD_H+100, width=self.ss.PAD_W, fill=self.theme.r_pad, tag="r_pad")
+		right_pad_id = self.c.create_rectangle(self.ss.WIDTH-self.ss.PAD_W, 0, self.ss.WIDTH, 
+									  self.ss.PAD_H+100, width=1, fill=self.theme.r_pad, tag="r_pad")
 								  
 		self.left_pad = Pad(left_pad_id, self.c, self.ss, ("w", "s"))
 		self.right_pad = Pad(right_pad_id, self.c, self.ss, ("Up", "Down"))
@@ -252,12 +252,14 @@ class Game:
 		self.p_1_text = self.c.create_text(self.ss.WIDTH*5/6, self.ss.PAD_H/4,
 										 text=0,
 										 font="Colibri 20",
-										 fill="white")
+										 fill="white",
+										 tag="text")
 		 
 		self.p_2_text = self.c.create_text(self.ss.WIDTH/6, self.ss.PAD_H/4,
 										  text=0,
 										  font="Colibri 20",
-										  fill="white")
+										  fill="white",
+										  tag="text")
 		
 		# Now unused								  
 		self.start_text = self.c.create_text(self.ss.WIDTH/2, self.ss.HEIGHT/3,

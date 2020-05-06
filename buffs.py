@@ -102,14 +102,14 @@ class Buffs:
 		
 		buff_list = ( ("green.png", 180, 100, self.speed_up_pad, 1),
 					   ("red.png", 180, 100, self.slow_down_pad, 1),
-					   ("blur.png", 180, 50, self.blur, 1),
+					   #("blur.png", 180, 50, self.blur, 1),
 					   ("enlarge.png", 140, 90, self.enlarge, 1),
 					   ("shrink.png", 140, 90, self.shrink, 1),
 					   ("ball_red.png", 200, 130, self.ball_small),
 					   ("ball_green.png", 200, 130, self.ball_big),
 					   ("teleport.png", 200, 1, self.ball_teleport),
 					   ("die2.png", 100, 1, self.die, 1),
-					   ("rotate.png", 200, 100, self.rotate, 1),
+					   #("rotate.png", 200, 100, self.rotate, 1),  # how to make it more visible????
 					   ("question.png", 200, 1, self.choose_random_buff, 1) ) 
 		
 		self.buffs = [Buff(*arg) for arg in buff_list]
@@ -180,7 +180,7 @@ class Buffs:
 			if not revert:
 				rect_id = self.c.create_rectangle(self.ss.WIDTH/2, 0,
 												  self.ss.RIGHT_TAB, self.ss.HEIGHT,
-												  fill="black")
+												  fill="#1C091A")
 				self.blured.append(rect_id)
 			else:
 				rect_id = self.blured.pop(0)
@@ -189,7 +189,7 @@ class Buffs:
 			if not revert:
 				rect_id = self.c.create_rectangle(self.ss.PAD_W, 0,
 												  self.ss.WIDTH/2, self.ss.HEIGHT,
-												  fill="black")
+												  fill="#1C091A")
 				self.blured.append(rect_id)
 			else:
 				rect_id = self.blured.pop(0)
@@ -242,22 +242,23 @@ class Buffs:
 			self.game.left_pad.rotate_controls()
 			self.l_pad_rotated = not self.l_pad_rotated
 			if self.l_pad_rotated:
-				self.c.itemconfig(self.game.left_pad.id, arrow=BOTH)
+				self.c.itemconfig(self.game.left_pad.id, width=5)
 			else:
-				self.c.itemconfig(self.game.left_pad.id, arrow=NONE)
+				self.c.itemconfig(self.game.left_pad.id, width=1)
 		else:
 			self.game.right_pad.rotate_controls()
 			self.r_pad_rotated = not self.r_pad_rotated
 			if self.r_pad_rotated:
-				self.c.itemconfig(self.game.right_pad.id, arrow=BOTH)
+				self.c.itemconfig(self.game.right_pad.id, width=5)
 			else:
-				self.c.itemconfig(self.game.right_pad.id, arrow=NONE)
+				self.c.itemconfig(self.game.right_pad.id, width=1)
 			
 	def choose_random_buff(self, side, revert=False):
 		if not revert:
 			buff = choice(self.buffs)
 			a_buff = AliveBuff(0, 0, self.c, buff)
 			a_buff.activate(side)
+			self.active_buffs.append(a_buff)
 		
 	def speed_up_ball(self, revert=False):
 		# Unused

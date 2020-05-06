@@ -10,7 +10,7 @@ class BaseMenu(Frame):
 		self.butts = []
 		for ind, opts in enumerate(buttons):
 			text, function = opts
-			b = Button(self, text=text, command=function, padx=20, bg=self.dis_color)
+			b = Button(self, text=text, command=function, padx=20, bg=self.dis_color, activebackground=self.norm_color)
 			b.bind("<Enter>", self.swap_active)		# trigers when mouse entered on this object
 			b.pack(anchor=CENTER, fill=X, pady=10)
 			self.butts.append(b)
@@ -58,6 +58,7 @@ class StopMenu(BaseMenu):
 		buttons = (("Continue", game_class._stop_cont_game),
 						 (self._get_wh_to_str(), lambda: None),
 						 ("Randomize colors", self.randomize_colors),
+						 ("Rotate theme", self.rotate_theme),
 						 ("Quit", game_class.root.quit))
 						 
 		BaseMenu.__init__(self, buttons, menu_id)
@@ -86,6 +87,10 @@ class StopMenu(BaseMenu):
 		width, height = self.game.ss.POSSIBLE_WHS[self.game.pos_whs_iter]
 		return "< "+str(width)+"x"+str(height)+" >"
 		
+	def rotate_theme(self):
+		self.game.theme.next_theme()
+		self.game.rotate_colors()
+		
 	def randomize_colors(self):
 		self.game.theme.randomize()
 		self.game.rotate_colors()
@@ -95,9 +100,9 @@ class StopMenu(BaseMenu):
 		self.norm_color = self.game.theme.menu_butts_on
 		self.dis_color = self.game.theme.menu_butts_off
 		for butt in self.butts:
-			butt.config(bg=self.dis_color)
+			butt.config(bg=self.dis_color, activebackground=self.norm_color)
 		self.butts[self.active].config(bg=self.norm_color)
-		
+	
 		
 class StartMenu(BaseMenu):
 	def __init__(self, menu_id, game_class):

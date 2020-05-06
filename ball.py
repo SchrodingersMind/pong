@@ -68,7 +68,7 @@ class Ball(object):
 				# Check if ball center is between top and bottom of pad
 				# off added for cases, for ex. when pad bottom between ball top and center
 				if self.c.get_top(self.r_pad_id)-off <= ball_center <= self.c.get_down(self.r_pad_id)+off:
-					alpha = (ball_center - self.c.get_top(self.r_pad_id)) / self.ss.PAD_H
+					alpha = (ball_center - self.c.get_top(self.r_pad_id)) / self.c.get_height(self.r_pad_id)
 					add_speed = self.game.right_pad.speed / 3
 					self._change_side()
 					self.bounce("strike", alpha, add_speed)
@@ -78,7 +78,7 @@ class Ball(object):
 			else:
 				# And left
 				if self.c.get_top(self.l_pad_id)-off <= ball_center <= self.c.get_down(self.l_pad_id)+off:
-					alpha = (ball_center - self.c.get_top(self.l_pad_id)) / self.ss.PAD_H
+					alpha = (ball_center - self.c.get_top(self.l_pad_id)) / self.c.get_height(self.l_pad_id)
 					add_speed = self.game.left_pad.speed / 3
 					self._change_side()
 					self.bounce("strike", alpha, add_speed)
