@@ -11,7 +11,7 @@ from tkinter import *
 # - add scale - DONE
 # - add music - AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 # - add settings
-# - - theme			- DONE
+# - - theme			- +-
 # - - sound on/off	- DEL
 # - - screen size	- DONE
 # - startup menu
@@ -195,8 +195,8 @@ class Game:
 		
 		
 	def rotate_colors(self):
-		self.stop_menu.rotate_colors()
-		self.theme.rotate_colors(self.c)
+		self.cur_menu.rotate_colors()
+		self.theme.rotate_colors()
 	
 			
 	# Used for testing, shoud be deleted	
@@ -216,34 +216,34 @@ class Game:
 		
 	def __init_canva(self):
 		# Canvas object
-		self.c = ExCanvas(self.root, width=self.ss.WIDTH, height=self.ss.HEIGHT, background=self.theme.bg)
+		self.c = ExCanvas(self.root, width=self.ss.WIDTH, height=self.ss.HEIGHT, background=self.theme["bg"])
 		self.c.pack(expand=True)
 		 
 	 
 		# left line
-		self.c.create_line(self.ss.PAD_W, 0, self.ss.PAD_W, self.ss.HEIGHT, fill=self.theme.line, tag="line")
+		self.c.create_line(self.ss.PAD_W, 0, self.ss.PAD_W, self.ss.HEIGHT, fill=self.theme["line"], tag="line")
 		# right line
 		self.c.create_line(self.ss.WIDTH-self.ss.PAD_W, 0, self.ss.WIDTH-self.ss.PAD_W, 
-							self.ss.HEIGHT, fill=self.theme.line, tag="line")
+							self.ss.HEIGHT, fill=self.theme["line"], tag="line")
 		# central line
 		self.c.create_line(self.ss.WIDTH//2, 0, self.ss.WIDTH//2, 
-							self.ss.HEIGHT, fill=self.theme.line, tag="line")
+							self.ss.HEIGHT, fill=self.theme["line"], tag="line")
 		
 		
 		self.buffs = Buffs(self.ss, self)
 		
 		# Work with Pads
 		left_pad_id = self.c.create_rectangle(0, 0, self.ss.PAD_W, 
-										self.ss.PAD_H, width=1, fill=self.theme.l_pad, tag="l_pad")
+										self.ss.PAD_H, width=1, fill=self.theme["l_pad"], tag="l_pad")
 		 
 		right_pad_id = self.c.create_rectangle(self.ss.WIDTH-self.ss.PAD_W, 0, self.ss.WIDTH, 
-									  self.ss.PAD_H+100, width=1, fill=self.theme.r_pad, tag="r_pad")
+									  self.ss.PAD_H+100, width=1, fill=self.theme["r_pad"], tag="r_pad")
 								  
 		self.left_pad = Pad(left_pad_id, self.c, self.ss, ("w", "s"))
 		self.right_pad = Pad(right_pad_id, self.c, self.ss, ("Up", "Down"))
 		
 		
-		self.ball = Ball(self.c, left_pad_id, right_pad_id, self, self.ss, self.theme.ball)
+		self.ball = Ball(self.c, left_pad_id, right_pad_id, self, self.ss, self.theme["ball"])
 		
 		
 	
@@ -281,6 +281,7 @@ class Game:
 		self.cur_menu = self.start_menu
 										  
 		self.c.focus_set()
+		self.theme.set_canvas(self.c)
 		
 	
 

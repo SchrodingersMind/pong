@@ -63,8 +63,8 @@ class StopMenu(BaseMenu):
 						 
 		BaseMenu.__init__(self, buttons, menu_id)
 		
-		self.norm_color = self.game.theme.menu_butts_on
-		self.dis_color = self.game.theme.menu_butts_off
+		self.norm_color = self.game.theme["menu_butts_on"]
+		self.dis_color = self.game.theme["menu_butts_off"]
 		
 	def check_keys(self, key):
 		BaseMenu.check_keys(self, key)
@@ -97,8 +97,8 @@ class StopMenu(BaseMenu):
 		
 	def rotate_colors(self):
 		# Change buttons color
-		self.norm_color = self.game.theme.menu_butts_on
-		self.dis_color = self.game.theme.menu_butts_off
+		self.norm_color = self.game.theme["menu_butts_on"]
+		self.dis_color = self.game.theme["menu_butts_off"]
 		for butt in self.butts:
 			butt.config(bg=self.dis_color, activebackground=self.norm_color)
 		self.butts[self.active].config(bg=self.norm_color)

@@ -1,7 +1,7 @@
 from random import randint
 
-class Theme:
-	
+class Theme(dict):
+	# TODO REWRITE IT
 	# This vars currently unused
 	tags = ("line", "l_pad", "r_pad", "ball")
 	elems = tags + ("menu_butts_on", "menu_butts_off", "bg")
@@ -34,37 +34,36 @@ class Theme:
 	
 	
 	def __init__(self):
+		dict.__init__(self)
+		self.fixed = {}
 		self.cur_theme = "Default"
 		self.choose_theme()
-		self.fixed = []
-	
+		
+	def set_canvas(self, canva):
+		self.c = canva
+		
 	def change_theme(self, bg="green", line="white", l_pad="yellow", 
 						r_pad="yellow", text="white",
 						ball="white", menu_butts_on="#b9b9b9", 
-						menu_butts_off="#2b2b2b", canva=None):
-		self.bg = bg
-		self.line = line
-		self.l_pad = l_pad
-		self.r_pad = r_pad
-		self.text = text
-		self.ball = ball
-		self.menu_butts_on = menu_butts_on
-		self.menu_butts_off = menu_butts_off
-		
-		self.full_theme = {"bg":bg, "line": line, "r_pad":r_pad, "l_pad":l_pad, 
-							"text":text, "ball":ball, "menu_butts_on":menu_butts_on, 
-							"menu_butts_off":menu_butts_off}
+						menu_butts_off="#2b2b2b"):
 							
-		if canva:
-			self.rotate_colors(canva)
+		self.update({"bg":bg, "line": line, "r_pad":r_pad, "l_pad":l_pad, 
+						"text":text, "ball":ball, "menu_butts_on":menu_butts_on, 
+						"menu_butts_off":menu_butts_off})
+		self.set_fixed()
 		
-	def rotate_colors(self, canva):
-		
-		for key in self.full_theme:
-			for elem in canva.find_withtag(key):
-				canva.itemconfig(elem, fill=self.full_theme[key])
-				
-		canva.config(bg=self.bg)
+	def rotate_colors(self, elem_tag=None):
+		if elem_tag:
+			for elem in self.c.find_withtag(elem_tag):
+				self.c.itemconfig(elem, fill=self[elem_tag])
+			if elem_tag == "bg":
+				self.c.config(bg=self["bg"])
+		else:
+			for key in self:
+				for elem in self.c.find_withtag(key):
+					self.c.itemconfig(elem, fill=self[key])
+					
+			self.c.config(bg=self["bg"])
 		# NOTE: menu buttons will be configured in SMenu class
 		
 	def choose_theme(self):
@@ -75,17 +74,45 @@ class Theme:
 		next_ind %= Theme.n_themes
 		self.cur_theme = Theme.theme_names[next_ind]
 		self.choose_theme()
+		
+	def pin_color(self, elem_tag, new_color):
+		if elem_tag in self.fixed:
+			old_color = self.fixed[elem_tag][0]
+		else:
+			old_color = self[elem_tag]
+		
+		self.fixed[elem_tag] = [old_color, new_color]
+		self[elem_tag] = new_color
+		self.rotate_colors(elem_tag)
+		
+		
+	def unpin_color(self, elem_tag):
+		if elem_tag in self.fixed:
+			self[elem_tag] = self.fixed[elem_tag][0]
+			self.fixed.pop(elem_tag)
+		self.rotate_colors(elem_tag)
+			
+			
+	def set_fixed(self):
+		for tag in self.fixed:
+			self.fixed[tag][0] = self[tag]
+			self[tag] = self.fixed[tag][1]
 		 
 		
-	def randomize(self, canva=None):
-		# Oh, yeah, I"m good designer
-		for key in self.full_theme:
+	def randomize(self):
+		# Oh, yeah, I'm good designer
+		for key in self:
 			if key not in self.fixed:
-				self.full_theme[key] = Theme._get_random_color()
+				self[key] = Theme._get_random_color()
 			
-		self.full_theme["l_pad"] = self.full_theme["r_pad"]
-			
-		self.change_theme(**self.full_theme, canva=canva)
+		# Make the same color for left and right pad	
+		if "l_pad" not in self.fixed:
+			if "r_pad" not in self.fixed:
+				self["l_pad"] = self["r_pad"]
+			else:
+				self["l_pad"] = self.fixed["r_pad"][0]
+		elif "r_pad" not in self.fixed:
+			self.fixed["l_pad"][0] = self["r_pad"]
 
 		
 	def _get_random_color():
