@@ -1,18 +1,20 @@
+from tkinter import *
+
 from sizes import Size
 from theme import Theme
 from ball import Ball
 from pad import Pad
-from menu import StopMenu, StartMenu
+from menu import StopMenu, StartMenu, OptionMenu
 from buffs import Buffs
+from extend import PositionList
 
-from tkinter import *
 
 # TODO's
 # - add scale - DONE
 # - add music - AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 # - add settings
 # - - theme			- +-
-# - - sound on/off	- DEL
+# - - sound on/off	- DEL (in Linux most didn't work from-the-box)
 # - - screen size	- DONE
 # - startup menu
 # - - play standart		- DONE
@@ -20,6 +22,8 @@ from tkinter import *
 # - - help 				- +-
 # - set ball as image
 # - add bonuses and (de)buffs - DONE
+# - options menu (with size, theme, crazy params)
+
 
 class ExCanvas(Canvas):
 	""" Make life better and code more understable """
@@ -100,22 +104,19 @@ class Game:
 			# 3 - <del>CRAZIEST</del> FUNNIEST CHOICE EVER. BUFFS APEARED 1 TIME A 0.3 S
 			# 4 - epileptic
 			
-		self.CRAZY = 3
-		
-	
-		###			Drawable and Window params
+		self.CRAZY = PositionList(("Classic", "Soft", "Normal", "Best", "Hard"), 3) 
+
 		# root window
 		self.root = Tk()
 		self.root.title("Pong")
 		
+		#print(self.root.winfo_screenwidth())
+		
+		# Create Canvas wit elements on it
 		self.__init_canva()
-		###			End of previous part
-		
+
 		self.c.bind("<KeyPress>", self.key_pressed)
-		
 		self.c.bind("<KeyRelease>", self.key_released)
-		
-		
 		
 		###			Game's options		
 		self.player_1_score = 0
@@ -178,13 +179,28 @@ class Game:
 			self.right_pad.button_release(event.keysym)
 
 	
-	def rotate_size(self, d_iter):
+	#def rotate_size(self, d_iter):
+		# DEPRECATED
 		# d_iter - changing offset for iterator -1 or 1
-		w,h = self.ss.POSSIBLE_WHS[self.pos_whs_iter]
-		self.pos_whs_iter += d_iter
-		self.pos_whs_iter %= len(self.ss.POSSIBLE_WHS)
-		new_w, new_h = self.ss.POSSIBLE_WHS[self.pos_whs_iter]
-		xscale, yscale = new_w/w, new_h/h
+	#	w,h = self.ss.POSSIBLE_WHS[self.pos_whs_iter]
+	#	self.pos_whs_iter += d_iter
+	#	self.pos_whs_iter %= len(self.ss.POSSIBLE_WHS)
+	#	new_w, new_h = self.ss.POSSIBLE_WHS[self.pos_whs_iter]
+	#	xscale, yscale = new_w/w, new_h/h
+	#	self._resize(xscale, yscale)
+		
+	def show_options_menu(self, hide=False):
+		self.c.itemconfig(self.cur_menu.id, state=HIDDEN)
+		if not hide:
+			self.cur_menu = self.options_menu
+		else:
+			self.cur_menu = self.start_menu
+		self.c.itemconfig(self.cur_menu.id, state=NORMAL)
+		
+	def update_size(self):
+		new_w, new_h = self.ss.SCREEN_SIZES.get()
+		xscale = new_w / self.ss.WIDTH
+		yscale = new_h / self.ss.HEIGHT
 		self._resize(xscale, yscale)
 		
 				
@@ -193,9 +209,20 @@ class Game:
 		self.c.scale(ALL, 0, 0, xscale, yscale)
 		self.ss.scale(xscale, yscale)
 		
+	def update_crazy(self):
+		# TODO
+		self.buffs.init_buffs()
+		
+		
+	def update_theme(self):
+		if not self.theme.randomed:
+			self.theme.choose_theme()
+		self.rotate_colors()
 		
 	def rotate_colors(self):
-		self.cur_menu.rotate_colors()
+		self.start_menu.rotate_colors()
+		self.stop_menu.rotate_colors()
+		self.options_menu.rotate_colors()
 		self.theme.rotate_colors()
 	
 			
@@ -237,7 +264,7 @@ class Game:
 										self.ss.PAD_H, width=1, fill=self.theme["l_pad"], tag="l_pad")
 		 
 		right_pad_id = self.c.create_rectangle(self.ss.WIDTH-self.ss.PAD_W, 0, self.ss.WIDTH, 
-									  self.ss.PAD_H+100, width=1, fill=self.theme["r_pad"], tag="r_pad")
+									  self.ss.PAD_H, width=1, fill=self.theme["r_pad"], tag="r_pad")
 								  
 		self.left_pad = Pad(left_pad_id, self.c, self.ss, ("w", "s"))
 		self.right_pad = Pad(right_pad_id, self.c, self.ss, ("Up", "Down"))
@@ -245,9 +272,6 @@ class Game:
 		
 		self.ball = Ball(self.c, left_pad_id, right_pad_id, self, self.ss, self.theme["ball"])
 		
-		
-	
-		# TODO change font
 		# Show players score
 		self.p_1_text = self.c.create_text(self.ss.WIDTH*5/6, self.ss.PAD_H/4,
 										 text=0,
@@ -274,6 +298,10 @@ class Game:
 		self.stop_menu = StopMenu(stop_menu_id, self)
 		self.c.itemconfig(stop_menu_id, window=self.stop_menu, state=HIDDEN)
 		
+		options_menu_id = self.c.create_window((self.ss.WIDTH/2, self.ss.HEIGHT/2))
+		self.options_menu = OptionMenu(options_menu_id, self)
+		self.c.itemconfig(options_menu_id, window=self.options_menu, state=HIDDEN)
+		
 		start_menu_id = self.c.create_window((self.ss.WIDTH/2, self.ss.HEIGHT/2))
 		self.start_menu = StartMenu(start_menu_id, self)
 		self.c.itemconfig(start_menu_id, window=self.start_menu) 
@@ -287,7 +315,8 @@ class Game:
 
 
 
-game = Game()
+if __name__ == "__main__":
+	game = Game()
 
 
 

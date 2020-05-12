@@ -1,10 +1,12 @@
 from random import choice, randint
-from tkinter import PhotoImage, NORMAL, BOTH, NONE
+from tkinter import PhotoImage, NORMAL
 from os import sep
+
+from theme import get_random_color
 
 class Buff:
 	# Constant object, that store in Buffs.buffs list
-	def __init__(self, image, image_duration, effect_duration, func, args=0):
+	def __init__(self, image, image_duration, effect_duration, func, args=0, repeated=0):
 		""" Create object, that represent buff """
 		self.image = PhotoImage(file="images"+sep+image)
 		self.image_duration = image_duration
@@ -13,6 +15,7 @@ class Buff:
 		
 		self.func = func
 		self.args = args
+		self.repeat = repeated
 		
 		
 class AliveBuff:
@@ -40,10 +43,14 @@ class AliveBuff:
 		if self.state == AliveBuff.STATE_POPS_UP and \
 				self.counter == self.opts.image_duration:
 			self.die()
-		elif self.state == AliveBuff.STATE_ACTIVATED and \
-				self.counter == self.opts.effect_duration:
-			self._call_func(True)
-			self.die()
+		elif self.state == AliveBuff.STATE_ACTIVATED:
+			if self.counter == self.opts.effect_duration:
+				self.die()
+			elif self.opts.repeat != 0 and \
+					self.counter%self.opts.repeat == 0:
+				self._call_func()
+				
+
 		
 	def activate(self, *args):
 		# Activate effect taken by buff
@@ -67,6 +74,8 @@ class AliveBuff:
 	def die(self):
 		if self.state == AliveBuff.STATE_POPS_UP:
 			self.c.delete(self.id)
+		elif self.state == AliveBuff.STATE_ACTIVATED:
+			self._call_func(True)
 		self.state = AliveBuff.STATE_DEAD
 		
 
@@ -89,33 +98,9 @@ class Buffs:
 		self.game = game
 		self.c = game.c
 		
-		if game.CRAZY == 0:
-			self.freq = 0
-		elif game.CRAZY == 1:
-			self.freq = 250
-		elif game.CRAZY == 2:
-			self.freq = 100
-		elif game.CRAZY == 3 or game.CRAZY == 4:
-			self.freq = 10
-		#self.pad_slow_down = {"left":False, "right":False}
-		#self.pad_speed_up = {"left":False, "right":False}
+		self.init_buffs()
 		
-		buff_list = ( #("green.png", 180, 100, self.speed_up_pad, 1),
-					   #("red.png", 180, 100, self.slow_down_pad, 1),
-					   #("blur.png", 180, 50, self.blur, 1),	Not shown in some themes
-					   #("enlarge.png", 140, 90, self.enlarge, 1),
-					   #("shrink.png", 140, 90, self.shrink, 1),
-					   ("ball_red.png", 200, 130, self.ball_small),
-					   ("ball_green.png", 200, 130, self.ball_big),
-					   #("teleport.png", 200, 1, self.ball_teleport),
-					   ("die2.png", 100, 1, self.die, 1),
-					   ("rotate.png", 200, 100, self.rotate, 1),  # how to make it more visible????
-					   ("question.png", 200, 1, self.choose_random_buff, 1) ) 
-		
-		self.buffs = [Buff(*arg) for arg in buff_list]
 		self.active_buffs = []
-		
-		self.on_screen_duration = 15
 		
 		# Maybe save it in Pad class??
 		self.l_pad_speed_up = 1
@@ -124,16 +109,15 @@ class Buffs:
 		self.l_pad_rotated = False
 		self.r_pad_rotated = False
 		
-		self.ball_speed_up = 1
-		
 		# Here store ids of black rectangulars, in order to than remove it
 		self.blured = [] 
+		
+		self.l_splash_id = 0
+		self.r_splash_id = 0
 		
 		self.l_pad_h = 1
 		self.r_pad_h = 1
 		
-		self.left_blured = False
-		self.right_blured = False
 		
 	def update(self, ball_id, ball_side):
 		# Add buff to the screen
@@ -169,10 +153,7 @@ class Buffs:
 			self.r_pad_speed_up *= 2 if not revert else 0.5
 		
 	def slow_down_pad(self, side, revert=False):
-		if side == "left":
-			self.l_pad_speed_up *= 0.5 if not revert else 2
-		elif side == "right":
-			self.r_pad_speed_up *= 0.5 if not revert else 2
+		self.speed_up_pad(side, not revert)
 			
 	def blur(self, side, revert=False):
 		""" Blur opponent field """
@@ -205,11 +186,7 @@ class Buffs:
 		
 	def shrink(self, side, revert=False):
 		""" Opposite to previous """
-		scale = 0.5 if not revert else 2
-		if side == "left":
-			self.c.scale_center(self.game.left_pad.id, 1, scale)
-		elif side == "right":
-			self.c.scale_center(self.game.right_pad.id, 1, scale)
+		self.enlarge(side, not revert)
 			
 	def ball_small(self, revert=False):
 		""" The same for ball """
@@ -259,8 +236,57 @@ class Buffs:
 			a_buff = AliveBuff(0, 0, self.c, buff)
 			a_buff.activate(side)
 			self.active_buffs.append(a_buff)
-		
-	def speed_up_ball(self, revert=False):
-		# Unused
-		self.ball_speed_up *= 1.2 if not revert else 0.83
+			
+	def splash(self, side, revert=False):
+		def check(side_check, spl_id):
+			if side == side_check:
+				if revert:
+					self.c.delete(spl_id)
+					return 0
+				elif spl_id == 0:
+					new_id = self.c.create_rectangle((0, 0, self.ss.WIDTH/2, self.ss.HEIGHT), fill="white")
+					if side == "left":
+						self.c.move(new_id, self.ss.WIDTH/2, 0)
+					self.c.tag_lower(new_id)
+					return new_id
+				else:
+					self.c.itemconfig(spl_id, fill=get_random_color())
+			return spl_id
+			
+		self.l_splash_id = check("left", self.l_splash_id)
+		self.r_splash_id = check("right", self.r_splash_id)
 
+	def init_buffs(self):
+		
+		buffs_1 = ( ("green.png", 180, 100, self.speed_up_pad, 1),
+					("red.png", 180, 100, self.slow_down_pad, 1),
+					("enlarge.png", 140, 90, self.enlarge, 1),
+					("shrink.png", 140, 90, self.shrink, 1) )
+					   	
+		buffs_2 = ( ("ball_red.png", 200, 130, self.ball_small),
+					("ball_green.png", 200, 130, self.ball_big),
+					("question.png", 200, 1, self.choose_random_buff, 1) )
+		
+		buffs_3 = ( ("teleport.png", 200, 1, self.ball_teleport),
+					#("blur.png", 180, 50, self.blur, 1),	Not shown in some themes ☹️
+					("splashes.png", 150, 200, self.splash, 1, 10),
+					("rotate.png", 200, 100, self.rotate, 1),  # how to make it more visible????
+					("die2.png", 100, 1, self.die, 1) ) 
+		
+		if self.game.CRAZY.it == 0:
+			self.freq = 0
+			buff_list = []
+		elif self.game.CRAZY.it == 1:
+			self.freq = 250
+			buff_list = buffs_1
+		elif self.game.CRAZY.it == 2:
+			self.freq = 100
+			buff_list = buffs_1 + buffs_2
+		elif self.game.CRAZY.it == 3 or self.game.CRAZY.it == 4:
+			self.freq = 10
+			buff_list = buffs_1 + buffs_2 + buffs_3
+			
+		self.buffs = [Buff(*arg) for arg in buff_list]
+
+
+		

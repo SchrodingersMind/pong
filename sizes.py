@@ -1,4 +1,4 @@
-
+from extend import PositionList
 
 class Size:
 	def __init__(self):
@@ -6,7 +6,7 @@ class Size:
 		self.HEIGHT = 400
 		
 		# WIDTH/HEIGHT must be primay the same (because ball must be circle)
-		self.POSSIBLE_WHS = [(self.WIDTH, self.HEIGHT), (800, 350), (1000, 450), (1200, 540)]
+		self.SCREEN_SIZES = PositionList([(800, 350), (self.WIDTH, self.HEIGHT), (1000, 450), (1200, 540)], 1)
 		
 		self.PAD_W = 10
 		self.PAD_H = 100
