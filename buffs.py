@@ -49,8 +49,6 @@ class AliveBuff:
 			elif self.opts.repeat != 0 and \
 					self.counter%self.opts.repeat == 0:
 				self._call_func()
-				
-
 		
 	def activate(self, *args):
 		# Activate effect taken by buff
@@ -153,6 +151,7 @@ class Buffs:
 			self.r_pad_speed_up *= 2 if not revert else 0.5
 		
 	def slow_down_pad(self, side, revert=False):
+		# Ha-ha, I am genius, again
 		self.speed_up_pad(side, not revert)
 			
 	def blur(self, side, revert=False):
@@ -190,15 +189,14 @@ class Buffs:
 			
 	def ball_small(self, revert=False):
 		""" The same for ball """
-		if not revert:
+		if not revert and self.ss.BALL_RADIUS > 3:
 			self.ss.BALL_RADIUS /= 2
 			self.c.scale_center(self.game.ball.id, 0.5)
-		else:
+		elif self.ss.HEIGHT/3 > self.ss.BALL_RADIUS:
 			self.ss.BALL_RADIUS *= 2
 			self.c.scale_center(self.game.ball.id, 2)
 			
 	def ball_big(self, revert=False):
-		# Ha-ha, I am genius, again
 		self.ball_small(not revert)
 		
 	def ball_teleport(self, revert=False):
@@ -245,7 +243,7 @@ class Buffs:
 					return 0
 				elif spl_id == 0:
 					new_id = self.c.create_rectangle((0, 0, self.ss.WIDTH/2, self.ss.HEIGHT), fill="white")
-					if side == "left":
+					if side == "right":
 						self.c.move(new_id, self.ss.WIDTH/2, 0)
 					self.c.tag_lower(new_id)
 					return new_id
@@ -255,6 +253,10 @@ class Buffs:
 			
 		self.l_splash_id = check("left", self.l_splash_id)
 		self.r_splash_id = check("right", self.r_splash_id)
+		
+	def move_screen(self, revert=False):
+		if not revert:
+			self.game.move_screen()
 
 	def init_buffs(self):
 		
@@ -267,11 +269,13 @@ class Buffs:
 					("ball_green.png", 200, 130, self.ball_big),
 					("question.png", 200, 1, self.choose_random_buff, 1) )
 		
-		buffs_3 = ( ("teleport.png", 200, 1, self.ball_teleport),
+		buffs_3 = ( ("rotate.png", 200, 100, self.rotate, 1),  # how to make it more visible????
 					#("blur.png", 180, 50, self.blur, 1),	Not shown in some themes ☹️
-					("splashes.png", 150, 200, self.splash, 1, 10),
-					("rotate.png", 200, 100, self.rotate, 1),  # how to make it more visible????
 					("die2.png", 100, 1, self.die, 1) ) 
+					
+		buffs_4 = ( ("teleport.png", 200, 1, self.ball_teleport),
+					("splashes.png", 150, 200, self.splash, 1, 10),
+					("move.png", 100, 50, self.move_screen, 0, 20) )
 		
 		if self.game.CRAZY.it == 0:
 			self.freq = 0
@@ -282,9 +286,12 @@ class Buffs:
 		elif self.game.CRAZY.it == 2:
 			self.freq = 100
 			buff_list = buffs_1 + buffs_2
-		elif self.game.CRAZY.it == 3 or self.game.CRAZY.it == 4:
+		elif self.game.CRAZY.it == 3:
 			self.freq = 10
 			buff_list = buffs_1 + buffs_2 + buffs_3
+		elif self.game.CRAZY.it == 4:
+			self.freq = 10
+			buff_list = buffs_1 + buffs_2 + buffs_3 + buffs_4
 			
 		self.buffs = [Buff(*arg) for arg in buff_list]
 

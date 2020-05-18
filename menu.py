@@ -1,5 +1,6 @@
 from tkinter import *
 
+
 class RotateButton(Button):
 	def __init__(self, frame, func_left, func_right, func_apply, func_text, **kwargs):
 		""" func_left - function to call, when user on it button and press key Left
@@ -123,11 +124,18 @@ class StopMenu(BaseMenu):
 						 (self._wh_to_str, wh_funcs),
 						 (self._theme_to_str, theme_funcs),
 						 ("Randomize colors", self.randomize_colors),
+						 ("Main menu", self.go_main_menu),
 						 ("Quit", game_class.root.quit))
 						 
 		norm_color = self.game.theme["menu_butts_on"]
 		dis_color = self.game.theme["menu_butts_off"]
 		BaseMenu.__init__(self, buttons, menu_id, norm_color, dis_color)
+		
+	def rotate_colors(self):
+		# Change buttons color
+		norm_color = self.game.theme["menu_butts_on"]
+		dis_color = self.game.theme["menu_butts_off"]
+		self.rotate_buttons_color(norm_color, dis_color)
 		
 	def check_keys(self, key):
 		BaseMenu.check_keys(self, key)				
@@ -147,11 +155,12 @@ class StopMenu(BaseMenu):
 		self.game.theme.randomize()
 		self.game.rotate_colors()
 		
-	def rotate_colors(self):
-		# Change buttons color
-		norm_color = self.game.theme["menu_butts_on"]
-		dis_color = self.game.theme["menu_butts_off"]
-		self.rotate_buttons_color(norm_color, dis_color)
+	def go_main_menu(self):
+		self.game.root.after_cancel(self.game.after_id)
+		self.game.buffs.desactivate()
+		#self.game.c.delete(ALL)
+		self.game.c.destroy()
+		self.game.reinit()
 		
 	def _wh_to_str(self):
 		# Return string for rotate_size_Button
@@ -163,7 +172,6 @@ class StopMenu(BaseMenu):
 	
 				
 	
-# TODO	
 class OptionMenu(BaseMenu):
 	def __init__(self, menu_id, game_class):
 		self.game = game_class
@@ -180,7 +188,8 @@ class OptionMenu(BaseMenu):
 						
 		buttons = ((self._wh_to_str, wh_funcs), 
 					(self._crazy_to_str, crazy_funcs), 
-					(self._theme_to_str, theme_funcs))
+					(self._theme_to_str, theme_funcs),
+					("Back", self.back))
 		norm_color = self.game.theme["menu_butts_on"]
 		dis_color = self.game.theme["menu_butts_off"]
 		BaseMenu.__init__(self, buttons, menu_id, norm_color, dis_color)

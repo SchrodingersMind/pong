@@ -1,4 +1,5 @@
 from tkinter import *
+from random import randint
 
 from sizes import Size
 from theme import Theme
@@ -6,7 +7,7 @@ from ball import Ball
 from pad import Pad
 from menu import StopMenu, StartMenu, OptionMenu
 from buffs import Buffs
-from extend import PositionList
+from extend import PositionList, ExCanvas
 
 
 # TODO's
@@ -14,7 +15,7 @@ from extend import PositionList
 # - add music - AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 # - add settings
 # - - theme			- +-
-# - - sound on/off	- DEL (in Linux most didn't work from-the-box)
+# - - sound on/off	- DEL (in Linux most libraries didn't work from-the-box)
 # - - screen size	- DONE
 # - startup menu
 # - - play standart		- DONE
@@ -23,80 +24,17 @@ from extend import PositionList
 # - set ball as image
 # - add bonuses and (de)buffs - DONE
 # - options menu (with size, theme, crazy params)
+# - add coments
 
-
-class ExCanvas(Canvas):
-	""" Make life better and code more understable """
-	def get_top(self, item_id):
-		return self.bbox(item_id)[1]
-	def get_down(self, item_id):
-		return self.bbox(item_id)[3]
-	def get_left(self, item_id):
-		return self.bbox(item_id)[0]
-	def get_right(self, item_id):
-		return self.bbox(item_id)[2]
-		
-	def get_x_center(self, item_id):
-		return (self.get_left(item_id) + self.get_right(item_id)) / 2
-	def get_y_center(self, item_id):
-		return (self.get_top(item_id) + self.get_down(item_id)) / 2
-		
-	def get_height(self, item_id=None):
-		if not item_id:
-			# Return height of canvas
-			return int(self.config()["height"][-1])
-		else:
-			return self.get_down(item_id) - self.get_top(item_id)
-			
-	def scale_center(self, item_id, xscale, yscale=None):
-		""" Scale object, don't changing it's center """
-		if not yscale:
-			yscale = xscale
-		old_x = self.get_x_center(item_id)
-		old_y = self.get_y_center(item_id)
-		self.scale(item_id, 0, 0, xscale, yscale)
-		new_x = self.get_x_center(item_id)
-		new_y = self.get_y_center(item_id)
-		dx, dy = old_x-new_x, old_y-new_y
-		self.move(item_id, dx, dy)
-		
-	def ball_coords(self, item_id, x, y, r=None):
-		""" Set ball center at (x,y) and radius to r """
-		if not r:
-			# Move ball without changing radius
-			cur_x = self.get_x_center(item_id)
-			cur_y = self.get_y_center(item_id)
-			self.move(item_id, x-cur_x, y-cur_y)
-		else:
-			self.coords(item_id, x-r, y-r, x+r, y+r)
-			
-	def check_collision(self, id1, id2, balls=True):
-		""" id1,2 - items id
-			balls - if True, do check by centers and 
-						compare it with radius(height/2)
-					otherwise, compare like squares
-		"""
-		if balls:
-			#print(self.bbox(id2), self.bbox(id1))
-			dist = (self.get_height(id1) + self.get_height(id2)) / 2
-			dy = self.get_y_center(id1) - self.get_y_center(id2)
-			dx = self.get_x_center(id1) - self.get_x_center(id2)
-			return dist**2 > dy**2 + dx**2
-		else:
-			elems = self.find_overlapping(*self.bbox(id1))
-			return id2 in elems
-		
 
 class Game:
 	
 	def __init__(self):
 		
 		self.ss = Size()
-		self.pos_whs_iter = 0
 		
 		self.theme = Theme()
 		
-		# TODO use it, add buff's set, improve last one
 		### CRAZY COULD BE:
 			# 0 - Boring. Very boring. Classical pong
 			# 1 - Better than prev. Buffs appeared 1 time a 30*250 ms
@@ -104,26 +42,18 @@ class Game:
 			# 3 - <del>CRAZIEST</del> FUNNIEST CHOICE EVER. BUFFS APEARED 1 TIME A 0.3 S
 			# 4 - epileptic
 			
-		self.CRAZY = PositionList(("Classic", "Soft", "Normal", "Best", "Hard"), 3) 
+		self.CRAZY = PositionList(("Classic", "Soft", "Normal", "Best", "Hard"), 2) 
 
 		# root window
 		self.root = Tk()
-		self.root.title("Pong")
-		
-		#print(self.root.winfo_screenwidth())
+		self.root.title("FPong")
+		self.root.geometry("+0+0")
+		self.root.iconphoto(False, PhotoImage(file="./images/window_icon.png"))
+		self.root.resizable(False, False)
 		
 		# Create Canvas wit elements on it
 		self.__init_canva()
 
-		self.c.bind("<KeyPress>", self.key_pressed)
-		self.c.bind("<KeyRelease>", self.key_released)
-		
-		###			Game's options		
-		self.player_1_score = 0
-		self.player_2_score = 0
-		
-		self.game_stopped = True
-		
 		self.root.mainloop()
 	
 	def run(self, vs_bot):
@@ -144,22 +74,22 @@ class Game:
 			else:
 				self.left_pad.move(speed_up=self.buffs.l_pad_speed_up)
 		# recall himself every 30 ms
-		self.root.after(30, self.main)
+		self.after_id = self.root.after(30, self.main)
 	
 	def win(self, player):
-		self.update_score(player)
-		self.ball.spawn_ball()
+		self._increase_score(player)
+		self.ball.respawn_ball()
 		
-	def update_score(self, player):
-		if player == "right":
-			self.player_1_score += 1
-			self.c.itemconfig(self.p_1_text, text=self.player_1_score)
+	def _increase_score(self, player):
+		if player == "left":
+			self.pl_2_score += 1
+			self.c.itemconfig(self.pl_2_text, text=self.pl_2_score)
 		else:
-			self.player_2_score += 1
-			self.c.itemconfig(self.p_2_text, text=self.player_2_score)
+			self.pl_1_score += 1
+			self.c.itemconfig(self.pl_1_text, text=self.pl_1_score)
 			
 			
-	def key_pressed(self, event):	
+	def _key_pressed(self, event):	
 		if not self.game_stopped:
 			# If ball and pads can move
 			self.left_pad.button_press(event.keysym)
@@ -173,22 +103,11 @@ class Game:
 
 			
 			
-	def key_released(self, event):
+	def _key_released(self, event):
 		if not self.game_stopped:
 			self.left_pad.button_release(event.keysym)
 			self.right_pad.button_release(event.keysym)
 
-	
-	#def rotate_size(self, d_iter):
-		# DEPRECATED
-		# d_iter - changing offset for iterator -1 or 1
-	#	w,h = self.ss.POSSIBLE_WHS[self.pos_whs_iter]
-	#	self.pos_whs_iter += d_iter
-	#	self.pos_whs_iter %= len(self.ss.POSSIBLE_WHS)
-	#	new_w, new_h = self.ss.POSSIBLE_WHS[self.pos_whs_iter]
-	#	xscale, yscale = new_w/w, new_h/h
-	#	self._resize(xscale, yscale)
-		
 	def show_options_menu(self, hide=False):
 		self.c.itemconfig(self.cur_menu.id, state=HIDDEN)
 		if not hide:
@@ -210,7 +129,6 @@ class Game:
 		self.ss.scale(xscale, yscale)
 		
 	def update_crazy(self):
-		# TODO
 		self.buffs.init_buffs()
 		
 		
@@ -226,12 +144,42 @@ class Game:
 		self.theme.rotate_colors()
 	
 			
-	# Used for testing, shoud be deleted	
+	# Used for testing, shoud be changed	
 	def print_help(self):
-		print("TODO!! Print it on main window")
+		# TODO!! Print it on main window
+		print("Welkome to the F(unny)Pong")
+		print()
 		print("Controls: left player - W/S, right - key Up/Down")
-		print("When played against bot you are right")
-		print("After start, press Esc to see more options")	
+		print("When playing against bot you are on the right")
+		print("At the time of game you could press Esc to go to the menu")
+		print()
+		print("There are 5 modes: Classic, Soft, Normal, Best, Hard")
+		print("\tClassic - Without buffs")
+		print("\tSoft - Sometimes minor buffs appear(Speed_up, Slow_down, Enlarge, Shrink)(all about pad)")
+		print("\tNormal - Buffs pops up more frequently, and to previous list added (Small_ball, Big_ball, Random)")
+		print("\tBest - Frequency increases, added (Rotate, Die)")
+		print("\t\t\tMaybe I played this game so many times(while debugging) so that all the previous modes became boring")
+		print("\t\t\t<Best> is the best - In My Humble Oppinion")
+		print("\tHard - Added (Teleport, Splash, Move)")
+		print()
+		print("Note: in most cases buffs affect the player who touched the ball last")
+		print("Except some general (Small_ball, Big_ball, Teleport, Move)")
+		print()
+		print("Some non-intuitive buffs:")
+		print("\tRandom - (question mark) execute random buff")
+		print("\tRotate - change pad control keys (when you press Up, it moves down) and color to dark-green")
+		print("\tTeleport - change balls position")
+		print("\tSplash - (white, green, red, black stripes) Cause blinking in your area")
+		print("\tMove - (four arrows) Screen moves several times")	
+		
+	def move_screen(self):
+		left = 0
+		right = self.root.winfo_screenwidth() - int(self.ss.WIDTH)
+		top = 0
+		bottom = self.root.winfo_screenheight() - int(self.ss.HEIGHT)
+		new_x = randint(left, right)
+		new_y = randint(top, bottom)
+		self.root.geometry(f"+{new_x}+{new_y}")
 		
 	def _stop_cont_game(self):
 		if self.game_stopped:
@@ -240,22 +188,23 @@ class Game:
 			self.c.itemconfig(self.cur_menu.id, state=NORMAL)
 		self.game_stopped = not self.game_stopped
 	
+	def reinit(self):
+		self.__init_canva()
 		
 	def __init_canva(self):
 		# Canvas object
 		self.c = ExCanvas(self.root, width=self.ss.WIDTH, height=self.ss.HEIGHT, background=self.theme["bg"])
-		self.c.pack(expand=True)
+		self.c.pack()#expand=True)
 		 
-	 
-		# left line
-		self.c.create_line(self.ss.PAD_W, 0, self.ss.PAD_W, self.ss.HEIGHT, fill=self.theme["line"], tag="line")
-		# right line
-		self.c.create_line(self.ss.WIDTH-self.ss.PAD_W, 0, self.ss.WIDTH-self.ss.PAD_W, 
-							self.ss.HEIGHT, fill=self.theme["line"], tag="line")
 		# central line
 		self.c.create_line(self.ss.WIDTH//2, 0, self.ss.WIDTH//2, 
 							self.ss.HEIGHT, fill=self.theme["line"], tag="line")
+							
+		self.c.create_ball(self.ss.WIDTH//2, self.ss.HEIGHT//2, self.ss.BALL_RADIUS/2, 
+							fill=self.theme["line"], width=0, tag="line")
 		
+		
+		self.__init_players_score()
 		
 		self.buffs = Buffs(self.ss, self)
 		
@@ -271,27 +220,6 @@ class Game:
 		
 		
 		self.ball = Ball(self.c, left_pad_id, right_pad_id, self, self.ss, self.theme["ball"])
-		
-		# Show players score
-		self.p_1_text = self.c.create_text(self.ss.WIDTH*5/6, self.ss.PAD_H/4,
-										 text=0,
-										 font="Colibri 20",
-										 fill="white",
-										 tag="text")
-		 
-		self.p_2_text = self.c.create_text(self.ss.WIDTH/6, self.ss.PAD_H/4,
-										  text=0,
-										  font="Colibri 20",
-										  fill="white",
-										  tag="text")
-		
-		# Now unused								  
-		self.start_text = self.c.create_text(self.ss.WIDTH/2, self.ss.HEIGHT/3,
-											text="Press any key to start\r\n(Later use Esc to call menu)",
-											font="Colibri 20",
-											justify=CENTER,
-											fill="white",
-											state=HIDDEN)
 		
 		# Menu creating
 		stop_menu_id = self.c.create_window((self.ss.WIDTH/2, self.ss.HEIGHT/2))
@@ -310,6 +238,24 @@ class Game:
 										  
 		self.c.focus_set()
 		self.theme.set_canvas(self.c)
+		
+		self.c.bind("<KeyPress>", self._key_pressed)
+		self.c.bind("<KeyRelease>", self._key_released)
+		
+		self.game_stopped = True
+		
+	def __init_players_score(self):
+		self.pl_1_score = 0
+		self.pl_2_score = 0
+		
+		# Show players score
+		self.pl_1_text = self.c.create_text(self.ss.WIDTH*4/5, self.ss.PAD_H/3,
+											text=0, fill="white",
+											font="Colibri 20", tag="text")
+		 
+		self.pl_2_text = self.c.create_text(self.ss.WIDTH/5, self.ss.PAD_H/3,
+											text=0, fill="white",
+											font="Colibri 20", tag="text")
 		
 	
 

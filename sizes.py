@@ -9,16 +9,15 @@ class Size:
 		self.SCREEN_SIZES = PositionList([(800, 350), (self.WIDTH, self.HEIGHT), (1000, 450), (1200, 540)], 1)
 		
 		self.PAD_W = 10
-		self.PAD_H = 100
+		self.PAD_H = 128
 		self.PAD_SPEED = 24
 	
-		self.BALL_RADIUS = 30
+		self.BALL_RADIUS = 15
 		# Ball speed will increase after touching with paddle
-		self.BALL_SPEED_UP = 1.06
+		self.SPEED_UP_BALL = 1.06
 		
 		self.BALL_MAX_SPEED = 60
-		self.INITIAL_SPEED = 30
-		self.BALL_X_SPEED = self.BALL_Y_SPEED = self.INITIAL_SPEED
+		self.BALL_MIN_SPEED = 30
 		
 		self.RIGHT_TAB = self.WIDTH-self.PAD_W
 		
@@ -36,9 +35,7 @@ class Size:
 		self.BALL_MAX_SPEED *=  (xscale+yscale)/2
 		self.BALL_RADIUS *= (xscale+yscale)/2
 		
-		self.INITIAL_SPEED *= (xscale+yscale)/2
-		self.BALL_X_SPEED *= xscale
-		self.BALL_Y_SPEED *= yscale
+		self.BALL_MIN_SPEED *= (xscale+yscale)/2
 		
 		self.RIGHT_TAB *= xscale
 
