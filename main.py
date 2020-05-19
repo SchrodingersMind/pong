@@ -7,7 +7,7 @@ from ball import Ball
 from pad import Pad
 from menu import StopMenu, StartMenu, OptionMenu
 from buffs import Buffs
-from extend import PositionList, ExCanvas
+from extend import PositionList, ExCanvas, Player
 
 
 # TODO's
@@ -67,7 +67,7 @@ class Game:
 		if not self.game_stopped:
 			self.ball.move()
 			self.right_pad.move(speed_up=self.buffs.r_pad_speed_up)
-			self.buffs.update(self.ball.id, self.ball.side)
+			self.buffs.update(self.ball.id)
 			if self.vs_bot:
 				self.left_pad.move(self.c.get_y_center(self.ball.id), \
 									self.buffs.l_pad_speed_up)
@@ -76,17 +76,20 @@ class Game:
 		# recall himself every 30 ms
 		self.after_id = self.root.after(30, self.main)
 	
-	def win(self, player):
-		self._increase_score(player)
+	def win(self):
+		self._increase_score(self.player.id)
 		self.ball.respawn_ball()
 		
+	def loose(self):
+		self._increase_score(self.player.other.id)
+		
 	def _increase_score(self, player):
-		if player == "left":
-			self.pl_2_score += 1
-			self.c.itemconfig(self.pl_2_text, text=self.pl_2_score)
+		if player == Player.LEFT:
+			self.player.l_player.score += 1
+			self.c.itemconfig(self.pl_l_text, text=self.player.l_player.score)
 		else:
-			self.pl_1_score += 1
-			self.c.itemconfig(self.pl_1_text, text=self.pl_1_score)
+			self.player.r_player.score += 1
+			self.c.itemconfig(self.pl_r_text, text=self.player.r_player.score)
 			
 			
 	def _key_pressed(self, event):	
@@ -142,6 +145,22 @@ class Game:
 		self.stop_menu.rotate_colors()
 		self.options_menu.rotate_colors()
 		self.theme.rotate_colors()
+		
+	def move_screen(self):
+		left = 0
+		right = self.root.winfo_screenwidth() - int(self.ss.WIDTH)
+		top = 0
+		bottom = self.root.winfo_screenheight() - int(self.ss.HEIGHT)
+		new_x = randint(left, right)
+		new_y = randint(top, bottom)
+		self.root.geometry(f"+{new_x}+{new_y}")
+		
+	def _stop_cont_game(self):
+		if self.game_stopped:
+			self.c.itemconfig(self.cur_menu.id, state=HIDDEN)
+		else:
+			self.c.itemconfig(self.cur_menu.id, state=NORMAL)
+		self.game_stopped = not self.game_stopped
 	
 			
 	# Used for testing, shoud be changed	
@@ -172,28 +191,14 @@ class Game:
 		print("\tSplash - (white, green, red, black stripes) Cause blinking in your area")
 		print("\tMove - (four arrows) Screen moves several times")	
 		
-	def move_screen(self):
-		left = 0
-		right = self.root.winfo_screenwidth() - int(self.ss.WIDTH)
-		top = 0
-		bottom = self.root.winfo_screenheight() - int(self.ss.HEIGHT)
-		new_x = randint(left, right)
-		new_y = randint(top, bottom)
-		self.root.geometry(f"+{new_x}+{new_y}")
-		
-	def _stop_cont_game(self):
-		if self.game_stopped:
-			self.c.itemconfig(self.cur_menu.id, state=HIDDEN)
-		else:
-			self.c.itemconfig(self.cur_menu.id, state=NORMAL)
-		self.game_stopped = not self.game_stopped
 	
 	def reinit(self):
 		self.__init_canva()
 		
 	def __init_canva(self):
 		# Canvas object
-		self.c = ExCanvas(self.root, width=self.ss.WIDTH, height=self.ss.HEIGHT, background=self.theme["bg"])
+		self.c = ExCanvas(self.root, width=self.ss.WIDTH, 
+							height=self.ss.HEIGHT, background=self.theme["bg"])
 		self.c.pack()#expand=True)
 		 
 		# central line
@@ -206,20 +211,24 @@ class Game:
 		
 		self.__init_players_score()
 		
-		self.buffs = Buffs(self.ss, self)
-		
 		# Work with Pads
 		left_pad_id = self.c.create_rectangle(0, 0, self.ss.PAD_W, 
-										self.ss.PAD_H, width=1, fill=self.theme["l_pad"], tag="l_pad")
+											self.ss.PAD_H, width=1, 
+											fill=self.theme["l_pad"], tag="l_pad")
 		 
 		right_pad_id = self.c.create_rectangle(self.ss.WIDTH-self.ss.PAD_W, 0, self.ss.WIDTH, 
-									  self.ss.PAD_H, width=1, fill=self.theme["r_pad"], tag="r_pad")
+									  		self.ss.PAD_H, width=1, 
+									  		fill=self.theme["r_pad"], tag="r_pad")
 								  
-		self.left_pad = Pad(left_pad_id, self.c, self.ss, ("w", "s"))
-		self.right_pad = Pad(right_pad_id, self.c, self.ss, ("Up", "Down"))
+		self.left_pad = Pad(left_pad_id, self.c, self.ss, ("w", "s"), Player.LEFT)
+		self.right_pad = Pad(right_pad_id, self.c, self.ss, ("Up", "Down"), Player.RIGHT)
+		
+		self.player = Player(self.left_pad, self.right_pad)
+		
+		self.ball = Ball(self.c, self.player, self, self.ss, self.theme["ball"])
 		
 		
-		self.ball = Ball(self.c, left_pad_id, right_pad_id, self, self.ss, self.theme["ball"])
+		self.buffs = Buffs(self.ss, self)
 		
 		# Menu creating
 		stop_menu_id = self.c.create_window((self.ss.WIDTH/2, self.ss.HEIGHT/2))
@@ -245,21 +254,16 @@ class Game:
 		self.game_stopped = True
 		
 	def __init_players_score(self):
-		self.pl_1_score = 0
-		self.pl_2_score = 0
-		
 		# Show players score
-		self.pl_1_text = self.c.create_text(self.ss.WIDTH*4/5, self.ss.PAD_H/3,
+		self.pl_r_text = self.c.create_text(self.ss.WIDTH*4/5, self.ss.PAD_H/3,
 											text=0, fill="white",
-											font="Colibri 20", tag="text")
+											font="Colibri 25", tag="text")
 		 
-		self.pl_2_text = self.c.create_text(self.ss.WIDTH/5, self.ss.PAD_H/3,
+		self.pl_l_text = self.c.create_text(self.ss.WIDTH/5, self.ss.PAD_H/3,
 											text=0, fill="white",
-											font="Colibri 20", tag="text")
+											font="Colibri 25", tag="text")
 		
 	
-
-
 
 if __name__ == "__main__":
 	game = Game()

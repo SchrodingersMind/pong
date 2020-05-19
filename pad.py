@@ -1,15 +1,17 @@
 
 
 class Pad(object):
-	def __init__(self, mine_id, canva, sizes, controls, bot=False):
+	def __init__(self, mine_id, canva, sizes, controls, p_id, bot=False):
 		self.speed = 0
 		self.c = canva
 		self.id = mine_id
 		
 		self.ss = sizes
 		
-		self.key_up = controls[0]
-		self.key_down = controls[1]
+		self._key_up = controls[0]
+		self._key_down = controls[1]
+		
+		self.p_id = p_id
 		
 		self.bot = bot
 		
@@ -37,9 +39,9 @@ class Pad(object):
 			# Nothing could change AI intentions
 			return
 			
-		if keysym == self.key_up:
+		if keysym == self._key_up:
 			self.speed = -self.ss.PAD_SPEED
-		elif keysym == self.key_down:
+		elif keysym == self._key_down:
 			self.speed = self.ss.PAD_SPEED
 			
 	def button_release(self, keysym):
@@ -47,13 +49,13 @@ class Pad(object):
 			# Nothing could change AI intentions
 			return
 			
-		if keysym == self.key_up or keysym == self.key_down:
+		if keysym == self._key_up or keysym == self._key_down:
 			self.speed = 0
 
 	def rotate_controls(self):
-		k_up = self.key_up
-		self.key_up = self.key_down
-		self.key_down = k_up
+		k_up = self._key_up
+		self._key_up = self._key_down
+		self._key_down = k_up
 
 
 

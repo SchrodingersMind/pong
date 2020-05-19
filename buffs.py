@@ -3,19 +3,20 @@ from tkinter import PhotoImage, NORMAL
 from os import sep
 
 from theme import get_random_color
+from extend import Player
 
 class Buff:
 	# Constant object, that store in Buffs.buffs list
 	def __init__(self, image, image_duration, effect_duration, func, args=0, repeated=0):
 		""" Create object, that represent buff """
-		self.image = PhotoImage(file="images"+sep+image)
+		self._image = PhotoImage(file="images"+sep+image)
 		self.image_duration = image_duration
 		
 		self.effect_duration = effect_duration
 		
-		self.func = func
-		self.args = args
-		self.repeat = repeated
+		self._func = func
+		self._args = args
+		self._repeat = repeated
 		
 		
 class AliveBuff:
@@ -31,7 +32,7 @@ class AliveBuff:
 		
 		self.opts = base_buff
 		
-		self.id = canva.create_image((x, y), image=self.opts.image, state=NORMAL)
+		self.id = canva.create_image((x, y), image=self.opts._image, state=NORMAL)
 		self.c = canva
 		
 		self.state = AliveBuff.STATE_POPS_UP
@@ -46,15 +47,15 @@ class AliveBuff:
 		elif self.state == AliveBuff.STATE_ACTIVATED:
 			if self.counter == self.opts.effect_duration:
 				self.die()
-			elif self.opts.repeat != 0 and \
-					self.counter%self.opts.repeat == 0:
+			elif self.opts._repeat != 0 and \
+					self.counter%self.opts._repeat == 0:
 				self._call_func()
 		
 	def activate(self, *args):
 		# Activate effect taken by buff
 		self.c.delete(self.id)
 		self.state = AliveBuff.STATE_ACTIVATED
-		if self.opts.args == 1:
+		if self.opts._args == 1:
 			self.side = args[0]
 		self._call_func()
 		
@@ -62,10 +63,10 @@ class AliveBuff:
 		
 			
 	def _call_func(self, revert=False):
-		if self.opts.args == 0:
-			self.opts.func(revert=revert)
-		elif self.opts.args == 1:
-			self.opts.func(self.side, revert=revert)
+		if self.opts._args == 0:
+			self.opts._func(revert=revert)
+		elif self.opts._args == 1:
+			self.opts._func(self.side, revert=revert)
 		else:
 			pass	# Silence is golden...
 			
@@ -98,7 +99,7 @@ class Buffs:
 		
 		self.init_buffs()
 		
-		self.active_buffs = []
+		self._active_buffs = []
 		
 		# Maybe save it in Pad class??
 		self.l_pad_speed_up = 1
@@ -108,7 +109,7 @@ class Buffs:
 		self.r_pad_rotated = False
 		
 		# Here store ids of black rectangulars, in order to than remove it
-		self.blured = [] 
+		self._blured = [] 
 		
 		self.l_splash_id = 0
 		self.r_splash_id = 0
@@ -117,103 +118,100 @@ class Buffs:
 		self.r_pad_h = 1
 		
 		
-	def update(self, ball_id, ball_side):
+	def update(self, ball_id):
 		# Add buff to the screen
-		if self.freq != 0 and randint(1, self.freq) == 1:
-			buff = choice(self.buffs)
+		if self._freq != 0 and randint(1, self._freq) == 1:
+			buff = choice(self._buffs)
 			x_coord = randint(0, self.ss.WIDTH*3//5) + self.ss.WIDTH/5
 			y_coord = randint(50, int(self.ss.HEIGHT)-50)
-			self.active_buffs.append(AliveBuff(x_coord, y_coord, self.c, buff))
+			self._active_buffs.append(AliveBuff(x_coord, y_coord, self.c, buff))
 			
 		# Remove dead
-		self.active_buffs = [buff for buff in self.active_buffs if buff.state != AliveBuff.STATE_DEAD]
+		self._active_buffs = [buff for buff in self._active_buffs if buff.state != AliveBuff.STATE_DEAD]
 		
 		# Update all
-		for buff in self.active_buffs:
+		for buff in self._active_buffs:
 			if buff.state == AliveBuff.STATE_POPS_UP and \
 					self.c.check_collision(ball_id, buff.id):
-				buff.activate(ball_side)
+				buff.activate(self.game.player.id)
 			buff.update()
 			
 	def desactivate(self):
 		""" Clear all buff from game """
-		for buff in self.active_buffs:
+		for buff in self._active_buffs:
 			buff.die()
 		
-		self.freq = 0
+		self._freq = 0
 		
-	### It would called when ball enters buffs image zone ###
+					### It would called when ball enters buffs image zone ###
 	
-	def speed_up_pad(self, side, revert=False):
-		if side == "left":
+	def _speed_up_pad(self, side, revert=False):
+		if side == Player.LEFT:
 			self.l_pad_speed_up *= 2 if not revert else 0.5
-		elif side == "right":
+		elif side == Player.RIGHT:
 			self.r_pad_speed_up *= 2 if not revert else 0.5
 		
-	def slow_down_pad(self, side, revert=False):
+	def _slow_down_pad(self, side, revert=False):
 		# Ha-ha, I am genius, again
-		self.speed_up_pad(side, not revert)
+		self._speed_up_pad(side, not revert)
 			
-	def blur(self, side, revert=False):
+	def _blur(self, side, revert=False):
 		""" Blur opponent field """
-		if side == "left":
+		if side == Player.LEFT:
 			if not revert:
 				rect_id = self.c.create_rectangle(self.ss.WIDTH/2, 0,
 												  self.ss.RIGHT_TAB, self.ss.HEIGHT,
 												  fill="black")
-				self.blured.append(rect_id)
+				self._blured.append(rect_id)
 			else:
-				rect_id = self.blured.pop(0)
+				rect_id = self._blured.pop(0)
 				self.c.delete(rect_id)
-		elif side == "right":
+		elif side == Player.RIGHT:
 			if not revert:
 				rect_id = self.c.create_rectangle(self.ss.PAD_W, 0,
 												  self.ss.WIDTH/2, self.ss.HEIGHT,
 												  fill="black")
-				self.blured.append(rect_id)
+				self._blured.append(rect_id)
 			else:
-				rect_id = self.blured.pop(0)
+				rect_id = self._blured.pop(0)
 				self.c.delete(rect_id)
 				
-	def enlarge(self, side, revert=False):
+	def _enlarge(self, side, revert=False):
 		""" Make pad bigger """
 		scale = 2 if not revert else 0.5
-		if side == "left":
+		if side == Player.LEFT:
 			self.c.scale_center(self.game.left_pad.id, 1, scale)
-		elif side == "right":
+		elif side == Player.RIGHT:
 			self.c.scale_center(self.game.right_pad.id, 1, scale)
 		
-	def shrink(self, side, revert=False):
+	def _shrink(self, side, revert=False):
 		""" Opposite to previous """
-		self.enlarge(side, not revert)
+		self._enlarge(side, not revert)
 			
-	def ball_small(self, revert=False):
+	def _ball_small(self, revert=False):
 		""" The same for ball """
 		if not revert and self.ss.BALL_RADIUS > 3:
 			self.ss.BALL_RADIUS /= 2
 			self.c.scale_center(self.game.ball.id, 0.5)
-		elif self.ss.HEIGHT/3 > self.ss.BALL_RADIUS:
+		elif self.ss.HEIGHT/4 > self.ss.BALL_RADIUS:
 			self.ss.BALL_RADIUS *= 2
 			self.c.scale_center(self.game.ball.id, 2)
 			
-	def ball_big(self, revert=False):
-		self.ball_small(not revert)
+	def _ball_big(self, revert=False):
+		self._ball_small(not revert)
 		
-	def ball_teleport(self, revert=False):
+	def _ball_teleport(self, revert=False):
 		""" Teleport to radom location without changing speed or direction """
 		if not revert:
 			self.game.ball.teleport()
 			
-	def die(self, side, revert=False):
+	def _die(self, side, revert=False):
 		if not revert:
-			if side == "left":
-				self.game.win("right")
-			else:
-				self.game.win("left")
+			self.game.loose()
 				
-	def rotate(self, side, revert=False):
+	def _rotate(self, side, revert=False):
 		""" Change controls (Up/Down) for pad in <side> """
-		if side == "left":
+		if side == Player.LEFT:
 			self.game.left_pad.rotate_controls()
 			self.l_pad_rotated = not self.l_pad_rotated
 			if self.l_pad_rotated:
@@ -228,22 +226,23 @@ class Buffs:
 			else:
 				self.game.theme.unpin_color("r_pad")
 			
-	def choose_random_buff(self, side, revert=False):
+	def _choose_random_buff(self, side, revert=False):
 		if not revert:
-			buff = choice(self.buffs)
+			buff = choice(self._buffs)
 			a_buff = AliveBuff(0, 0, self.c, buff)
 			a_buff.activate(side)
-			self.active_buffs.append(a_buff)
+			self._active_buffs.append(a_buff)
 			
-	def splash(self, side, revert=False):
-		def check(side_check, spl_id):
+	def _splash(self, side, revert=False):
+		def __check(side_check, spl_id):
 			if side == side_check:
 				if revert:
 					self.c.delete(spl_id)
 					return 0
 				elif spl_id == 0:
-					new_id = self.c.create_rectangle((0, 0, self.ss.WIDTH/2, self.ss.HEIGHT), fill="white")
-					if side == "right":
+					new_id = self.c.create_rectangle((0, 0, self.ss.WIDTH/2, self.ss.HEIGHT), 
+																			fill="white")
+					if side == Player.RIGHT:
 						self.c.move(new_id, self.ss.WIDTH/2, 0)
 					self.c.tag_lower(new_id)
 					return new_id
@@ -251,49 +250,51 @@ class Buffs:
 					self.c.itemconfig(spl_id, fill=get_random_color())
 			return spl_id
 			
-		self.l_splash_id = check("left", self.l_splash_id)
-		self.r_splash_id = check("right", self.r_splash_id)
+		self.l_splash_id = __check(Player.LEFT, self.l_splash_id)
+		self.r_splash_id = __check(Player.RIGHT, self.r_splash_id)
 		
-	def move_screen(self, revert=False):
+	def _move_screen(self, revert=False):
 		if not revert:
 			self.game.move_screen()
+			
+						###		End of buffs effects section	### 
 
 	def init_buffs(self):
 		
-		buffs_1 = ( ("green.png", 180, 100, self.speed_up_pad, 1),
-					("red.png", 180, 100, self.slow_down_pad, 1),
-					("enlarge.png", 140, 90, self.enlarge, 1),
-					("shrink.png", 140, 90, self.shrink, 1) )
+		buffs_1 = ( ("green.png", 180, 100, self._speed_up_pad, 1),
+					("red.png", 180, 100, self._slow_down_pad, 1),
+					("enlarge.png", 140, 90, self._enlarge, 1),
+					("shrink.png", 140, 90, self._shrink, 1) )
 					   	
-		buffs_2 = ( ("ball_red.png", 200, 130, self.ball_small),
-					("ball_green.png", 200, 130, self.ball_big),
-					("question.png", 200, 1, self.choose_random_buff, 1) )
+		buffs_2 = ( ("ball_red.png", 200, 130, self._ball_small),
+					("ball_green.png", 200, 130, self._ball_big),
+					("question.png", 200, 1, self._choose_random_buff, 1) )
 		
-		buffs_3 = ( ("rotate.png", 200, 100, self.rotate, 1),  # how to make it more visible????
+		buffs_3 = ( ("rotate.png", 200, 100, self._rotate, 1),  # how to make it more visible????
 					#("blur.png", 180, 50, self.blur, 1),	Not shown in some themes ☹️
-					("die2.png", 100, 1, self.die, 1) ) 
+					("die2.png", 100, 1, self._die, 1) ) 
 					
-		buffs_4 = ( ("teleport.png", 200, 1, self.ball_teleport),
-					("splashes.png", 150, 200, self.splash, 1, 10),
-					("move.png", 100, 50, self.move_screen, 0, 20) )
+		buffs_4 = ( ("teleport.png", 200, 1, self._ball_teleport),
+					("splashes.png", 150, 200, self._splash, 1, 10),
+					("move.png", 100, 50, self._move_screen, 0, 20) )
 		
 		if self.game.CRAZY.it == 0:
-			self.freq = 0
+			self._freq = 0
 			buff_list = []
 		elif self.game.CRAZY.it == 1:
-			self.freq = 250
+			self._freq = 250
 			buff_list = buffs_1
 		elif self.game.CRAZY.it == 2:
-			self.freq = 100
+			self._freq = 100
 			buff_list = buffs_1 + buffs_2
 		elif self.game.CRAZY.it == 3:
-			self.freq = 10
+			self._freq = 10
 			buff_list = buffs_1 + buffs_2 + buffs_3
 		elif self.game.CRAZY.it == 4:
-			self.freq = 10
+			self._freq = 10
 			buff_list = buffs_1 + buffs_2 + buffs_3 + buffs_4
 			
-		self.buffs = [Buff(*arg) for arg in buff_list]
+		self._buffs = [Buff(*arg) for arg in buff_list]
 
 
 		

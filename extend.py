@@ -1,4 +1,7 @@
 from tkinter import Canvas
+from enum import Enum
+
+from pad import Pad
 
 class PositionList(list):
 	def __init__(self, base_list, cur_iter=0):
@@ -7,8 +10,8 @@ class PositionList(list):
 		self.it = cur_iter
 		
 	def next(self, step=1):
+		step %= self.n
 		self.it += step
-		# Don't work if step > 2*n
 		if self.it < 0:
 			self.it += self.n
 		elif self.it >= self.n:
@@ -20,6 +23,60 @@ class PositionList(list):
 		
 	def get(self):
 		return self[self.it]
+
+class PlayerData():
+	def __init__(self, player_id, player_class, player_string, score=0):
+		self.id = player_id
+		self._p_class = player_class
+		self._p_str = player_string
+		self.score = score
+		
+	def __eq__(self, value):
+		if isinstance(value, int):
+			return self.id == value
+		elif isinstance(value, str):
+			return self._p_str == value
+		elif isinstance(value, Pad):
+			return self.id == value.p_id
+	def __neq__(self, value):
+		if isinstance(value, (int, str, Pad)):
+			return not self.__eq__(value)
+			
+	def to_str(self):
+		return self._p_str
+	def get(self):
+		return self.id
+	def get_pad(self):
+		return self._p_class
+		
+	def copy(self):
+		return PlayerData(self.id, self._p_class, self._p_str)
+			
+
+class Player(PlayerData):
+	LEFT = 0
+	RIGHT = 1
+
+	def __init__(self, pad_left, pad_right):
+		
+		PlayerData.__init__(self, Player.LEFT, pad_left, "left")
+		self.l_player = self.copy()
+		
+		self.r_player = PlayerData(Player.RIGHT, pad_right, "right")
+		self.other = self.r_player
+	
+	def switch(self):
+		if self.id == Player.LEFT:
+			self._reinit(self.r_player)
+			self.other = self.l_player
+		else:
+			self._reinit(self.l_player)
+			self.other = self.r_player
+			
+	def _reinit(self, player):
+		self.id = player.id
+		self._p_class = player._p_class
+		self._p_str = player._p_str
 
 
 class ExCanvas(Canvas):
