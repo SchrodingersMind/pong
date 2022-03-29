@@ -1,6 +1,6 @@
 ## Basic info
 
-Welkome to the F(unny)Pong
+Welcome to the F(unny)Pong
 
 Controls: left player - W/S, right - key Up/Down
 When playing against bot you are on the right
@@ -15,7 +15,7 @@ Maybe I played this game so many times(while debugging) so that all the previous
 Note: \<Best\> is the best - In My Humble Opinion
 * Hard - Added (Teleport, Splash, Move)
 
-Note: in most cases buffs affect the player who touched the ball last
+Note: in most cases buffs affect the player who touched the ball last \
 Except some general (Small_ball, Big_ball, Teleport, Move)
 
 Some non-intuitive buffs:
@@ -24,6 +24,10 @@ Some non-intuitive buffs:
 * Teleport - (spirals) change balls position
 * Splash - (white, green, red, black stripes) Cause blinking in your area
 * Move - (four arrows) Screen moves several times
+
+## Installation
+
+There is no need to install additional packages! Just pure python3 with tkinter
 
 ## Screenshots
 ![img.png](images/readme/img.png)
